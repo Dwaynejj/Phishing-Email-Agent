@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environment — never commit this
+venv/
+env/
+ENV/
+.venv/
+
+# Model files (large binary — regenerate with train.py)
+# Comment out if you want to keep the model in the repo
+# models/*.pkl
+
+# Dataset (large CSV files)
+# Comment out if you want to track datasets
+# *.csv
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+/tmp/
+
+# NLTK data (downloaded automatically)
+nltk_data/
+
+# Jupyter
+.ipynb_checkpoints/

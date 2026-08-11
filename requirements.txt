@@ -1,0 +1,12 @@
+flask
+flask-cors
+pandas
+numpy
+scikit-learn
+joblib
+scipy
+nltk
+beautifulsoup4
+tldextract
+# Optional for Outlook .msg uploads:
+# extract-msg
