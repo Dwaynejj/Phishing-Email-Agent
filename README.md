@@ -1,73 +1,98 @@
-# 🛡️ PhishShield – Advanced Phishing Detection System
+# PhishShield
 
-PhishShield is a powerful AI-driven phishing detection agent that analyzes emails and web content to identify potential phishing threats in real-time. Using an intelligently trained **Random Forest** classifier on a dataset of **200k+ emails**, PhishShield leverages linguistic patterns, link analysis, and structural metadata to predict whether a message is phishing or legitimate with over **96% of  accuracy**.    
+PhishShield is a phishing email detection system built with a **Flask** API, a **Random Forest** classifier trained on **200,000** labeled emails, a cream/grey web UI, and an optional **Chrome extension** for Gmail.
 
-# 📌 Overview
+It classifies a message as **phishing** (red) or **legitimate** (green) using wording, layout, and sender-domain features.
 
-PhishShield consists of
+<p align="center">
+  <img src="screenshots/09-dashboard-overview.png" width="860" alt="PhishShield dashboard">
+</p>
 
-- **🧠 Backend (Flask API):** ML-powered REST API for real-time predictions.
-- **🎨 Frontend (HTML/CSS/JS):** Interactive UI for email inspection and manual inputs.
-- **📊 ML Model:** Pre-trained model using advanced feature engineering.
-- **📁 Dataset:** 200,000 labeled email samples with 7 rich features for training and research..
+---
 
+## What’s included
 
-### Model Working
+| Component | Path | Role |
+|-----------|------|------|
+| Flask API + UI server | `app.py` | Serves the web app and prediction endpoints |
+| Email parsing | `email_utils.py` | Parses `.eml` / `.txt` (optional `.msg`) |
+| Model training | `train.py` | Builds and saves the Random Forest pipeline |
+| Saved model | `models/phishing_detection_model.pkl` | Loaded at startup (auto-trains if missing) |
+| Dataset | `dataset.csv` | 200k labeled emails |
+| Web UI | `templates/index.html` | Upload / manual analysis, results, history |
+| Chrome extension | `Extension/` | Checks the open Gmail message via the local API |
+| Screenshots | `screenshots/` | Current UI captures |
 
-PhishShield extracts wording, layout, and sender-domain features, then classifies with a Random Forest model.
+---
 
-# 🌟 Key Features
+## Features
 
-### 🚀 Real-time Detection
+### Detection
+- Random Forest classifier with TF-IDF text features, domain hashing, and numeric signals
+- Confidence score and phishing probability in every response
+- Feature breakdown shown in the UI (links, urgent language, lengths, HTML tags, etc.)
+- Auto-train fallback if the model file is missing (`python train.py` / startup)
 
-- REST API via Flask backend
-- JSON-based predictions with confidence scores
-- Auto model training fallback (`train.py`)
+### Web UI
+- Cream & grey theme; **phishing = red**, **legitimate = green**
+- **Upload file** → review the selected file → click **Check email**
+- **Manual input** for pasted body, subject, sender domain, and options
+- About / Settings modals, scan stats, and localStorage history with reanalyze
+- Default server port **5001** (avoids macOS AirPlay on port 5000)
 
-### 🧪 Smart Feature Engineering
+### Chrome extension
+- Reads the open Gmail message (subject, sender, body)
+- Posts to `/detect` on your local PhishShield server
+- Configurable API URL (default `http://127.0.0.1:5001`)
 
-- 25+ extracted features including:
-  - Domain reputation
-  - Link patterns
-  - Urgent language indicators
-  - HTML tag frequency
-  - Attachment behavior
-
-### 🧠 ML Model Highlights
-
-- **Random Forest Classifier**
-- Over **96% accuracy**
-- Trained on 200k labeled samples
-- Explainable predictions
-
-### 💡 User-Friendly Interface
-
-- Drag-and-drop email file analysis (`.eml`, `.txt`; `.msg` with optional `extract-msg`)
-- Server-side email parsing (headers, body, attachments, links)
-- Manual content entry support
-- Visual risk indicator (safe/suspicious)
-- Historical detection log with one-click reanalysis
-- Chrome extension for Gmail (local API)
-
-### 🔌 API Endpoints
-
+### API
 | Method | Path | Purpose |
 |--------|------|---------|
 | `GET` | `/` | Web UI |
 | `GET` | `/health` | Model status |
-| `POST` | `/predict` | JSON prediction (`email_text`, `subject`, …) |
-| `POST` | `/detect` | Alias of `/predict` (extension) |
+| `POST` | `/predict` | JSON prediction |
+| `POST` | `/detect` | Same as `/predict` (extension) |
 | `POST` | `/parse` | Upload email file → parsed fields |
 | `POST` | `/analyze` | Upload email file → parse + predict |
 
----
-# PhishShield Demo Walkthrough
+**Example `/predict` body:**
+```json
+{
+  "email_text": "Dear customer, verify your account now: https://evil.example/login",
+  "subject": "Urgent: Action required",
+  "sender_domain": "evil.example",
+  "has_attachment": 0,
+  "urgent_keywords": 1,
+  "links_count": 1
+}
+```
 
-### Home — Upload
+Aliases accepted for the body field: `email_text`, `text`, `body`, or `content`.
+
+**Example response:**
+```json
+{
+  "prediction": "phishing",
+  "result": "phishing",
+  "probability": 0.9,
+  "confidence": 0.9,
+  "features_used": {
+    "links_count": 1,
+    "urgent_keywords": 1,
+    "email_length": 181
+  }
+}
+```
+
+---
+
+## Screenshots
+
+### Home — upload
 <img src="screenshots/01-home-upload.png" width="800" alt="Home upload view">
 
-### Manual Input
-<img src="screenshots/02-manual-input.png" width="800" alt="Manual input view">
+### Manual input
+<img src="screenshots/02-manual-input.png" width="800" alt="Manual input">
 
 ### About
 <img src="screenshots/03-about.png" width="800" alt="About modal">
@@ -75,103 +100,118 @@ PhishShield extracts wording, layout, and sender-domain features, then classifie
 ### Settings
 <img src="screenshots/04-settings.png" width="800" alt="Settings modal">
 
-### File Ready to Check
-<img src="screenshots/05-file-ready-to-check.png" width="800" alt="Uploaded file awaiting Check email">
+### File ready — Check email
+<img src="screenshots/05-file-ready-to-check.png" width="800" alt="File staged with Check email button">
 
-### Phishing Result
-<img src="screenshots/06-result-phishing.png" width="800" alt="Phishing result flagged in red">
+### Phishing result
+<img src="screenshots/06-result-phishing.png" width="800" alt="Phishing result in red">
 
-### Legitimate Result
-<img src="screenshots/07-result-legitimate.png" width="800" alt="Legitimate result flagged in green">
+### Legitimate result
+<img src="screenshots/07-result-legitimate.png" width="800" alt="Legitimate result in green">
 
 ### History
 <img src="screenshots/08-history.png" width="800" alt="Analysis history">
 
-### Dashboard Overview
-<img src="screenshots/09-dashboard-overview.png" width="800" alt="Full dashboard overview">
-
-### Chrome Extension Popup
+### Chrome extension
 <img src="screenshots/10-extension-popup.png" width="360" alt="Chrome extension popup">
 
 ---
 
-# 📊 Dataset
+## Dataset
 
-PhishShield includes a **robust and reusable dataset** of **200,000+ labeled emails** for training, evaluation, and experimentation.
+`dataset.csv` contains **200,000** labeled rows (`phishing` / `legitimate`).
 
-### 📑 Labels (Features):
-| Feature            | Description |
-|--------------------|-------------|
-| `email_text`       | Body content of the email |
-| `subject`          | Email subject line |
-| `has_attachment`   | Binary flag (1 = yes, 0 = no) |
-| `links_count`      | Number of hyperlinks detected |
-| `sender_domain`    | Domain of sender’s email address |
-| `urgent_keywords`  | Binary flag (1 = urgent words found) |
-| `label`            | Target class: `phishing` or `legitimate` |
+| Column | Description |
+|--------|-------------|
+| `email_text` | Email body |
+| `subject` | Subject line |
+| `has_attachment` | `1` / `0` |
+| `links_count` | Hyperlink count |
+| `sender_domain` | Sender domain |
+| `urgent_keywords` | `1` if urgent phrases present |
+| `label` | `phishing` or `legitimate` |
 
-> 🧠 Ideal for building and enhancing phishing classifiers or integrating into broader cybersecurity AI pipelines.
+At prediction time the app also derives lengths, link density, HTML tag count, special-character count, and a hash-based `domain_age` proxy (kept consistent with training; not a live WHOIS lookup).
 
 ---
 
-## 🛠️ Installation & Setup
+## Setup
 
-### 📋 Prerequisites
+### Prerequisites
 - Python 3.8+
 - Git
-- Node.js (for frontend development, optional)
+- Chrome (only if you use the extension)
 
-### 🔧 Backend Setup
+### Install & run
 ```bash
-# Clone the repository
 git clone https://github.com/Dwaynejj/Phishing-Email-Agent.git
 cd Phishing-Email-Agent
 
-# Create virtual environment
 python -m venv venv
-
-# Activate environment
-# For Windows:
-venv\Scripts\activate
-# For macOS/Linux:
+# macOS / Linux
 source venv/bin/activate
+# Windows
+# venv\Scripts\activate
 
-# Install dependencies
 pip install -r requirements.txt
-
-# Start Flask server (default: http://127.0.0.1:5001)
-# Port 5001 avoids macOS AirPlay Receiver, which often binds 5000
 python app.py
+```
 
-# Optional: custom port
+Open **http://127.0.0.1:5001**
+
+Custom port:
+```bash
 PORT=8080 python app.py
 ```
 
-Open the UI at [http://127.0.0.1:5001](http://127.0.0.1:5001).
+### Chrome extension (Gmail)
+1. Start PhishShield on port **5001**.
+2. Go to `chrome://extensions` → enable **Developer mode**.
+3. **Load unpacked** → select the `Extension/` folder.
+4. Open a Gmail message → PhishShield icon → **Check Email**.
 
-### 🧩 Chrome Extension (Gmail)
-1. Start the Flask server on port **5001**.
-2. Open `chrome://extensions` → enable **Developer mode**.
-3. Click **Load unpacked** and select the `Extension/` folder.
-4. Open a Gmail message → click the PhishShield icon → **Check Email**.
-
-### 📎 Outlook `.msg` files (optional)
-`.eml` and `.txt` work out of the box. For `.msg` support:
+### Outlook `.msg` (optional)
+`.eml` and `.txt` work by default. For `.msg`:
 ```bash
 pip install extract-msg
 ```
 
-### 🔁 Retrain the model
+### Retrain the model
 ```bash
 python train.py
 ```
+This overwrites `models/phishing_detection_model.pkl`.
 
-## 📬 Contact
-<ul>
-  <li><strong>GitHub</strong>: <a href="https://github.com/Dwaynejj/" target="_blank">https://github.com/Dwaynejj/</a></li>
-</ul>
+### Refresh UI screenshots (optional)
+With the server running:
+```bash
+pip install playwright
+python -m playwright install chromium
+python scripts/capture_screenshots.py
+```
 
+---
 
-## 📄 License
+## Project layout
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE.txt) file for details.
+```
+Phishing-Email-Agent/
+├── app.py                 # Flask app, features, API routes
+├── email_utils.py         # .eml / .txt / .msg parsing
+├── train.py               # Training pipeline
+├── dataset.csv            # Training data
+├── models/                # Saved sklearn pipeline
+├── templates/index.html   # Web UI
+├── Extension/             # Chrome MV3 extension
+├── screenshots/           # UI screenshots
+├── scripts/               # Helper scripts (e.g. screenshot capture)
+└── requirements.txt
+```
+
+---
+
+## License
+
+MIT — see [LICENSE.txt](LICENSE.txt).
+
+**GitHub:** [https://github.com/Dwaynejj/Phishing-Email-Agent](https://github.com/Dwaynejj/Phishing-Email-Agent)
