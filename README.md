@@ -159,16 +159,17 @@ python app.py
 
 Open **http://127.0.0.1:5001**
 
-Custom port:
+Custom port / local debug:
 ```bash
-PORT=8080 python app.py
+PORT=8080 FLASK_DEBUG=1 python app.py
 ```
 
 ### Chrome extension (Gmail)
-1. Start PhishShield on port **5001**.
+1. Start PhishShield (local or hosted).
 2. Go to `chrome://extensions` → enable **Developer mode**.
 3. **Load unpacked** → select the `Extension/` folder.
 4. Open a Gmail message → PhishShield icon → **Check Email**.
+5. If hosted in the cloud, set **API URL** in the popup to your Render URL (e.g. `https://phishshield.onrender.com`).
 
 ### Outlook `.msg` (optional)
 `.eml` and `.txt` work by default. For `.msg`:
@@ -192,6 +193,72 @@ python scripts/capture_screenshots.py
 
 ---
 
+## Host on Render (Option B)
+
+PhishShield is set up for [Render](https://render.com) with `Procfile`, `runtime.txt`, and `render.yaml`.
+
+### 1. Push the latest code to GitHub
+```bash
+git add -A
+git commit -m "Add Render/gunicorn production hosting config"
+git push
+```
+Use your `Dwaynejj/Phishing-Email-Agent` remote.
+
+### 2. Create a Render account
+1. Go to [https://render.com](https://render.com) and sign up.
+2. Connect your **GitHub** account.
+3. Authorize access to **Dwaynejj/Phishing-Email-Agent** (only that repo is enough).
+
+### 3. Create a Web Service
+**Either use Blueprint (easiest):**
+1. Dashboard → **New** → **Blueprint**
+2. Select `Dwaynejj/Phishing-Email-Agent`
+3. Render reads `render.yaml` and proposes service **phishshield**
+4. Click **Apply**
+
+**Or create manually:**
+1. Dashboard → **New** → **Web Service**
+2. Connect `Dwaynejj/Phishing-Email-Agent`
+3. Settings:
+   - **Runtime:** Python 3
+   - **Build command:**  
+     `pip install -r requirements.txt && python -c "import nltk; nltk.download('stopwords'); nltk.download('wordnet'); nltk.download('omw-1.4')"`
+   - **Start command:**  
+     `gunicorn -b 0.0.0.0:$PORT -w 2 --timeout 120 app:app`
+   - **Instance type:** Free
+4. Env vars:
+   - `FLASK_DEBUG` = `0`
+   - `PYTHON_VERSION` = `3.11.9` (optional if `runtime.txt` is present)
+5. Click **Create Web Service**
+
+### 4. Wait for the deploy
+- First build installs packages + NLTK data (a few minutes).
+- When status is **Live**, open the URL Render gives you, e.g.  
+  `https://phishshield-xxxx.onrender.com`
+
+### 5. Smoke-test
+```bash
+curl https://YOUR-SERVICE.onrender.com/health
+```
+You should see `"status":"ok"` and `"model_loaded": true`.
+
+Then open the URL in a browser and run a manual analysis.
+
+### 6. Point the Chrome extension at Render
+1. In the extension popup, set API URL to `https://YOUR-SERVICE.onrender.com` (no trailing slash).
+2. Click **Save API**.
+3. Reload the extension on `chrome://extensions` if needed.
+
+`Extension/manifest.json` already allows `https://*.onrender.com/*`.
+
+### Free-tier notes
+- The free service **spins down** after ~15 minutes idle; the first request after that can take 30–60s.
+- Keep `models/phishing_detection_model.pkl` in the repo so Render does **not** retrain on boot (training 200k rows would exceed free limits).
+- Do not rely on `debug` mode in production (`FLASK_DEBUG=0`).
+
+---
+
 ## Project layout
 
 ```
@@ -205,6 +272,9 @@ Phishing-Email-Agent/
 ├── Extension/             # Chrome MV3 extension
 ├── screenshots/           # UI screenshots
 ├── scripts/               # Helper scripts (e.g. screenshot capture)
+├── Procfile               # Gunicorn start command (PaaS)
+├── render.yaml            # Render Blueprint config
+├── runtime.txt            # Python version for Render
 └── requirements.txt
 ```
 

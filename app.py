@@ -379,5 +379,6 @@ if __name__ == '__main__':
     # Default 5001 — macOS AirPlay Receiver often occupies 5000.
     # Override with: PORT=8080 python3 app.py
     port = int(os.environ.get('PORT', 5001))
-    print(f"Starting PhishShield on http://127.0.0.1:{port}")
-    app.run(debug=True, host='0.0.0.0', port=port)
+    debug = os.environ.get('FLASK_DEBUG', '0') == '1'
+    print(f"Starting PhishShield on http://0.0.0.0:{port} (debug={debug})")
+    app.run(debug=debug, host='0.0.0.0', port=port)

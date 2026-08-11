@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: phishshield
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt && python -c "import nltk; nltk.download('stopwords'); nltk.download('wordnet'); nltk.download('omw-1.4')"
+    startCommand: gunicorn -b 0.0.0.0:$PORT -w 2 --timeout 120 app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: FLASK_DEBUG
+        value: "0"

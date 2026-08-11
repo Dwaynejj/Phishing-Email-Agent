@@ -8,5 +8,6 @@ scipy
 nltk
 beautifulsoup4
 tldextract
+gunicorn
 # Optional for Outlook .msg uploads:
 # extract-msg
